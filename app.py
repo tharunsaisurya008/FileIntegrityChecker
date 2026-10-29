@@ -15,7 +15,11 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
 APP_DIR = Path(__file__).resolve().parent
+SAMPLE_DIR = APP_DIR / "sample_files"
+SAMPLE_DIR.mkdir(parents=True, exist_ok=True)
+
 BASELINE_PATH = APP_DIR / "baseline.json"
 KEY_PATH = APP_DIR / ".baseline_key"
 HISTORY_PATH = APP_DIR / "scan_history.jsonl"
@@ -65,8 +69,9 @@ h1,h2,h3 { letter-spacing: -.35px; }
     color:#65edbd; font-size:11px; font-weight:700;
 }
 [data-testid="stMetric"] {
-    background:linear-gradient(145deg,#0d2037,#0a192b); border:1px solid #1b3859;
-    border-radius:16px; padding:17px 18px; box-shadow:0 5px 18px rgba(0,0,0,.12);
+    background:linear-gradient(145deg,#0d2037,#0a192b);
+    border:1px solid #1b3859; border-radius:16px; padding:17px 18px;
+    box-shadow:0 5px 18px rgba(0,0,0,.12);
 }
 [data-testid="stMetricLabel"] { color:#a7bedb; font-weight:650; }
 [data-testid="stMetricValue"] { color:#f2f7ff; font-weight:800; }
@@ -74,43 +79,38 @@ h1,h2,h3 { letter-spacing: -.35px; }
 .panel { background:linear-gradient(145deg,#0c1d32,#0a192b); border:1px solid #1b3859; border-radius:16px; padding:18px; }
 .panel-title { color:#eff6ff; font-size:16px; font-weight:750; margin-bottom:5px; }
 .panel-copy { color:#9bb3d1; font-size:12px; line-height:1.55; }
-.stButton > button,.stDownloadButton > button { border-radius:10px; min-height:42px; font-weight:700; border:1px solid #28568a; }
-.stButton > button[kind="primary"] { background:linear-gradient(100deg,#2478f7,#6755f5); color:#fff; border:1px solid #4588ff; }
-.stButton > button[kind="primary"]:hover { filter:brightness(1.12); border-color:#8ab8ff; }
-.stButton > button:not([kind="primary"]),.stDownloadButton > button { background:#102642; color:#e6f0ff; }
-.stButton > button:not([kind="primary"]):hover,.stDownloadButton > button:hover { background:#163454; color:#fff; border-color:#4789d8; }
-.stTextInput input,.stTextArea textarea,[data-baseweb="select"] > div { background:#0a192b; color:#e7f0ff; border-color:#294563; border-radius:9px; }
+.stButton > button,.stDownloadButton > button {
+    border-radius:12px; min-height:42px; font-weight:700;
+    border:1px solid #28568a; transition:all .2s ease-in-out;
+}
+.stButton > button:hover {
+    transform:translateY(-2px);
+    box-shadow:0 6px 18px rgba(22,163,255,.25);
+}
+.stButton > button[kind="primary"] {
+    background:linear-gradient(100deg,#2478f7,#6755f5);
+    color:#fff; border:1px solid #4588ff;
+}
+.stButton > button:not([kind="primary"]),.stDownloadButton > button {
+    background:#102642; color:#e6f0ff;
+}
+.stTextInput input,.stTextArea textarea,[data-baseweb="select"] > div {
+    background:#0a192b; color:#e7f0ff; border-color:#294563; border-radius:9px;
+}
 [data-testid="stAlert"] { border-radius:12px; border:1px solid #294563; }
-[data-testid="stTable"],[data-testid="stDataFrame"] { border:1px solid #1b3859; border-radius:12px; overflow:hidden; }
+[data-testid="stTable"],[data-testid="stDataFrame"] {
+    border:1px solid #1b3859; border-radius:12px; overflow:hidden;
+}
 [data-testid="stExpander"] { background:#0b1b30; border:1px solid #1b3859; border-radius:12px; }
 hr { border-color:#1b3859; }
 .footer { color:#7894b7; font-size:11px; text-align:center; padding-top:12px; }
-@media(max-width:768px) { .block-container { padding:1rem .8rem 2rem; } .hero { padding:21px; } }
-/* UI Enhancement: Smooth interactions and polished panels */
-.stButton > button {
-    border-radius: 12px;
-    font-weight: 700;
-    transition: all 0.2s ease-in-out;
-}
-
-.stButton > button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(22, 163, 255, 0.25);
-}
-
-[data-testid="stMetric"] {
-    background: linear-gradient(135deg, rgba(22, 99, 180, 0.16), rgba(80, 60, 180, 0.12));
-    border: 1px solid rgba(80, 160, 255, 0.25);
-    border-radius: 14px;
-    padding: 14px;
-}
-
-[data-testid="stExpander"] {
-    border: 1px solid rgba(80, 160, 255, 0.25);
-    border-radius: 12px;
+@media(max-width:768px) {
+    .block-container { padding:1rem .8rem 2rem; }
+    .hero { padding:21px; }
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 # 3. Hashing and baseline security
 def calculate_hash(file_path):
@@ -128,15 +128,23 @@ def get_signing_key():
                 file.write(secrets.token_bytes(32))
         except FileExistsError:
             pass
+
     key = KEY_PATH.read_bytes()
     if len(key) != 32:
-        raise ValueError("Invalid signing key. Restore the original .baseline_key or create a new trusted baseline.")
+        raise ValueError(
+            "Invalid signing key. Restore the original .baseline_key "
+            "or create a new trusted baseline."
+        )
     return key
 
 
 def sign_data(data):
-    message = json.dumps(data, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    return hmac.new(get_signing_key(), message, hashlib.sha256).hexdigest()
+    message = json.dumps(
+        data, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    return hmac.new(
+        get_signing_key(), message, hashlib.sha256
+    ).hexdigest()
 
 
 def read_text_snapshot(file_path, max_bytes=200000):
@@ -150,11 +158,21 @@ def read_text_snapshot(file_path, max_bytes=200000):
 
 def scan_folder(folder_text):
     root = Path(folder_text).expanduser().resolve()
+
     if not root.is_dir():
-        raise ValueError("The selected folder does not exist.")
+        raise ValueError(
+            "The selected folder does not exist. Choose the sample_files folder."
+        )
+
     if root == APP_DIR:
-        raise ValueError("Choose a specific folder, such as sample_files, instead of the whole project folder.")
-    hashes, errors = {}, []
+        raise ValueError(
+            "Choose a specific folder, such as sample_files, "
+            "instead of the whole project folder."
+        )
+
+    hashes = {}
+    errors = []
+
     for path in root.rglob("*"):
         try:
             if path.is_symlink() or not path.is_file():
@@ -162,15 +180,18 @@ def scan_folder(folder_text):
             hashes[path.relative_to(root).as_posix()] = calculate_hash(path)
         except (OSError, ValueError) as error:
             errors.append(f"{path}: {error}")
+
     return root, hashes, errors
 
 
 def save_baseline(root, hashes):
     snapshots = {}
+
     for name in hashes:
         content = read_text_snapshot(root / name)
         if content is not None:
             snapshots[name] = content
+
     data = {
         "folder": str(root),
         "created_at": datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -178,8 +199,10 @@ def save_baseline(root, hashes):
         "files": hashes,
         "text_snapshots": snapshots,
     }
+
     data["signature"] = sign_data(data)
     temp_path = BASELINE_PATH.with_suffix(".tmp")
+
     try:
         temp_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
         temp_path.replace(BASELINE_PATH)
@@ -191,18 +214,26 @@ def save_baseline(root, hashes):
 def load_baseline():
     if not BASELINE_PATH.exists():
         return None
+
     if not KEY_PATH.exists():
         raise ValueError("Signing key is missing. The baseline cannot be verified.")
+
     data = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
     signature = data.pop("signature", None)
+
     if not isinstance(signature, str):
         raise ValueError("Baseline signature is missing.")
+
     expected = sign_data(data)
+
     if not hmac.compare_digest(signature, expected):
         raise ValueError("BASELINE TAMPERING DETECTED! The baseline signature is invalid.")
+
     if not isinstance(data.get("files"), dict):
         raise ValueError("Invalid baseline file list.")
+
     return data
+
 
 # 4. Scan history
 def record_scan(entry):
@@ -212,8 +243,10 @@ def record_scan(entry):
 
 def read_history():
     entries = []
+
     if not HISTORY_PATH.exists():
         return entries
+
     with HISTORY_PATH.open("r", encoding="utf-8") as file:
         for line in file:
             try:
@@ -222,7 +255,9 @@ def read_history():
                     entries.append(item)
             except json.JSONDecodeError:
                 continue
+
     return entries
+
 
 # 5. Styled results table
 def color_status(value):
@@ -237,47 +272,79 @@ def color_status(value):
 
 def style_results_table(df):
     other_columns = [column for column in df.columns if column != "Status"]
+
     return (
         df.style.map(color_status, subset=["Status"])
-        .set_properties(subset=other_columns, **{"background-color": "#0b1b30", "color": "#e7f0ff"})
+        .set_properties(
+            subset=other_columns,
+            **{"background-color": "#0b1b30", "color": "#e7f0ff"},
+        )
         .set_table_styles([
-            {"selector": "table", "props": [("background-color", "#0b1b30"), ("color", "#e7f0ff"), ("border-collapse", "collapse"), ("width", "100%")]},
-            {"selector": "th", "props": [("background-color", "#102642"), ("color", "#f4f8ff"), ("border", "1px solid #1b3859"), ("padding", "11px"), ("text-align", "left")]},
-            {"selector": "td", "props": [("border", "1px solid #1b3859"), ("padding", "10px")]},
+            {"selector": "table", "props": [
+                ("background-color", "#0b1b30"), ("color", "#e7f0ff"),
+                ("border-collapse", "collapse"), ("width", "100%"),
+            ]},
+            {"selector": "th", "props": [
+                ("background-color", "#102642"), ("color", "#f4f8ff"),
+                ("border", "1px solid #1b3859"), ("padding", "11px"),
+                ("text-align", "left"),
+            ]},
+            {"selector": "td", "props": [
+                ("border", "1px solid #1b3859"), ("padding", "10px"),
+            ]},
         ])
     )
+
 
 # 6. Sidebar navigation and controls
 with st.sidebar:
     st.markdown("""
     <div class="brand">
       <div class="brand-icon">🛡️</div>
-      <div><div class="brand-title">File Integrity<br>Checker</div>
-      <div class="brand-caption">SECURITY SUITE</div></div>
+      <div>
+        <div class="brand-title">File Integrity<br>Checker</div>
+        <div class="brand-caption">SECURITY SUITE</div>
+      </div>
     </div>
     """, unsafe_allow_html=True)
+
     st.caption("Secure  •  Monitor  •  Verify")
     st.markdown("---")
+
     page = st.radio(
         "NAVIGATION",
         ["🔎  Integrity Scanner", "🕘  Scan History", "🛡️  Security"],
         label_visibility="collapsed",
         key="main_navigation",
     )
+
     st.markdown("---")
     st.markdown("#### ⚙️ Scan Controls")
-    folder = st.text_input("Folder to monitor", value=str(APP_DIR / "sample_files"),
-                           help="Choose the specific folder whose files you want to monitor.")
+
+    folder = st.text_input(
+        "Folder to monitor",
+        value=str(SAMPLE_DIR),
+        help="Use the sample_files folder for files managed by this dashboard.",
+    )
+
     st.markdown("""
     <div class="sidebar-note"><strong>Quick start</strong><br>
-    1. Select your target folder.<br>2. Create a trusted baseline.<br>3. Scan again after file changes.</div>
+    1. Upload or edit text files.<br>
+    2. Create a trusted baseline.<br>
+    3. Scan again after file changes.</div>
     """, unsafe_allow_html=True)
+
     if st.button("↻ Refresh Dashboard", use_container_width=True):
         st.rerun()
+
     st.markdown("""
-    <div class="sidebar-note"><strong style="color:#65edbd;">● Local security status</strong><br>
-    SHA-256 file fingerprints<br>HMAC-SHA256 baseline verification</div>
+    <div class="sidebar-note">
+    <strong style="color:#65edbd;">● Security status</strong><br>
+    SHA-256 file fingerprints<br>
+    HMAC-SHA256 baseline verification
+    </div>
     """, unsafe_allow_html=True)
+
 
 # 7. Shared header
 st.markdown("""
@@ -289,16 +356,116 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 8. Integrity scanner
+
+# 8. Integrity scanner and file management
 if page == "🔎  Integrity Scanner":
+
+    st.markdown('<div class="section-label">FILE MANAGEMENT</div>', unsafe_allow_html=True)
+    st.subheader("📁 Manage Test Files")
+    st.write("Upload TXT files and edit their contents directly from this dashboard.")
+
+    with st.expander("➕ Upload TXT Files", expanded=True):
+        with st.form("upload_txt_form", clear_on_submit=True):
+            uploaded_files = st.file_uploader(
+                "Choose one or more .txt files",
+                type=["txt"],
+                accept_multiple_files=True,
+                help="Files are saved in this app's sample_files folder.",
+            )
+
+            upload_clicked = st.form_submit_button(
+                "Upload TXT Files",
+                type="primary",
+                use_container_width=True,
+            )
+
+            if upload_clicked:
+                if not uploaded_files:
+                    st.warning("Please select at least one TXT file.")
+                else:
+                    saved = 0
+
+                    for uploaded in uploaded_files:
+                        filename = Path(uploaded.name).name
+
+                        if not filename.lower().endswith(".txt"):
+                            continue
+
+                        destination = SAMPLE_DIR / filename
+                        destination.write_bytes(uploaded.getvalue())
+                        saved += 1
+
+                    if saved:
+                        st.success(f"Successfully saved {saved} TXT file(s).")
+                        st.rerun()
+                    else:
+                        st.warning("No valid TXT files were uploaded.")
+
+    text_files = sorted(SAMPLE_DIR.glob("*.txt"))
+
+    with st.expander("✏️ Edit Existing TXT Files", expanded=True):
+        if not text_files:
+            st.info("No TXT files found. Upload a file above to get started.")
+        else:
+            selected_name = st.selectbox(
+                "Choose a text file",
+                [path.name for path in text_files],
+                key="edit_selected_file",
+            )
+
+            selected_file = SAMPLE_DIR / selected_name
+
+            try:
+                original_content = selected_file.read_text(encoding="utf-8")
+
+                edited_content = st.text_area(
+                    "Edit file content",
+                    value=original_content,
+                    height=220,
+                    key=f"editor_{selected_name}",
+                )
+
+                if st.button(
+                    "💾 Save Changes",
+                    type="primary",
+                    use_container_width=True,
+                ):
+                    selected_file.write_text(edited_content, encoding="utf-8")
+                    st.success(f"{selected_name} saved successfully.")
+                    st.rerun()
+
+            except (OSError, UnicodeDecodeError) as error:
+                st.error(f"Could not open this text file: {error}")
+
+    with st.expander("📄 Available TXT Files"):
+        text_files = sorted(SAMPLE_DIR.glob("*.txt"))
+
+        if text_files:
+            for text_file in text_files:
+                st.write(f"📄 {text_file.name} — {text_file.stat().st_size} bytes")
+        else:
+            st.info("No text files available yet.")
+
+    st.divider()
     st.markdown('<div class="section-label">INTEGRITY MONITORING</div>', unsafe_allow_html=True)
     st.subheader("Scanner overview")
     st.write("Compare current file fingerprints against your signed trusted baseline.")
+
     action1, action2, status_col = st.columns([1, 1, 1.05])
+
     with action1:
-        create_clicked = st.button("＋  Create Trusted Baseline", type="primary", use_container_width=True)
+        create_clicked = st.button(
+            "＋  Create Trusted Baseline",
+            type="primary",
+            use_container_width=True,
+        )
+
     with action2:
-        scan_clicked = st.button("⌕  Check File Integrity", use_container_width=True)
+        scan_clicked = st.button(
+            "⌕  Check File Integrity",
+            use_container_width=True,
+        )
+
     with status_col:
         baseline_exists = BASELINE_PATH.exists()
         st.markdown(f"""
@@ -313,26 +480,30 @@ if page == "🔎  Integrity Scanner":
     if create_clicked:
         try:
             root, hashes, errors = scan_folder(folder)
+
             if errors:
                 st.error("Some files could not be read. Baseline was not created.")
                 for error in errors:
                     st.write(error)
             elif not hashes:
-                st.warning("No files found. Add files to your folder first.")
+                st.warning("No files found. Upload files or choose a folder containing files.")
             else:
                 save_baseline(root, hashes)
                 st.success(f"Trusted baseline created for {len(hashes)} file(s).")
                 st.info("The baseline contains SHA-256 hashes and eligible text snapshots.")
+
         except (OSError, ValueError, json.JSONDecodeError) as error:
             st.error(f"Could not create baseline: {error}")
 
     if scan_clicked:
         try:
             baseline = load_baseline()
+
             if baseline is None:
                 st.warning("Please create a trusted baseline before scanning.")
             else:
                 root, current, errors = scan_folder(folder)
+
                 if str(root) != baseline.get("folder"):
                     st.error("The selected folder differs from the baseline folder.")
                 elif errors:
@@ -342,8 +513,11 @@ if page == "🔎  Integrity Scanner":
                 else:
                     original = baseline["files"]
                     results = []
+
                     for name in sorted(set(original) | set(current)):
-                        old_hash, new_hash = original.get(name), current.get(name)
+                        old_hash = original.get(name)
+                        new_hash = current.get(name)
+
                         if old_hash is None:
                             status = "NEW"
                         elif new_hash is None:
@@ -352,13 +526,22 @@ if page == "🔎  Integrity Scanner":
                             status = "MODIFIED"
                         else:
                             status = "UNCHANGED"
+
                         results.append({
-                            "File": name, "Status": status,
+                            "File": name,
+                            "Status": status,
                             "Original SHA-256": old_hash or "-",
                             "Current SHA-256": new_hash or "-",
                         })
 
-                    df = pd.DataFrame(results, columns=["File", "Status", "Original SHA-256", "Current SHA-256"])
+                    df = pd.DataFrame(
+                        results,
+                        columns=[
+                            "File", "Status",
+                            "Original SHA-256", "Current SHA-256",
+                        ],
+                    )
+
                     counts = df["Status"].value_counts()
                     unchanged = int(counts.get("UNCHANGED", 0))
                     modified = int(counts.get("MODIFIED", 0))
@@ -366,6 +549,7 @@ if page == "🔎  Integrity Scanner":
                     deleted = int(counts.get("DELETED", 0))
 
                     st.markdown('<div class="section-label">LATEST SCAN / SUMMARY</div>', unsafe_allow_html=True)
+
                     m1, m2, m3, m4 = st.columns(4)
                     m1.metric("✓ Unchanged", unchanged)
                     m2.metric("⚠ Modified", modified)
@@ -383,88 +567,147 @@ if page == "🔎  Integrity Scanner":
                     st.table(style_results_table(df))
 
                     modified_names = df.loc[df["Status"] == "MODIFIED", "File"].tolist()
+
                     if modified_names:
                         st.markdown('<div class="section-label">CHANGE INVESTIGATION</div>', unsafe_allow_html=True)
                         st.subheader("Before vs. after text comparison")
                         snapshots = baseline.get("text_snapshots", {})
+
                         for name in modified_names:
                             with st.expander(f"📝 {name}", expanded=True):
                                 before_text = snapshots.get(name)
                                 after_text = read_text_snapshot(root / name)
+
                                 if before_text is None or after_text is None:
-                                    st.info("Text comparison is unavailable. The file may be binary, too large, or absent from the original text snapshots.")
+                                    st.info(
+                                        "Text comparison is unavailable. The file may be binary, "
+                                        "too large, or absent from the original text snapshots."
+                                    )
                                     continue
+
                                 before_col, after_col = st.columns(2)
+
                                 with before_col:
                                     st.markdown("**Original content**")
-                                    st.text_area("Original content", value=before_text, height=240, disabled=True,
-                                                 key=f"before_{name}", label_visibility="collapsed")
+                                    st.text_area(
+                                        "Original content",
+                                        value=before_text,
+                                        height=240,
+                                        disabled=True,
+                                        key=f"before_{name}",
+                                        label_visibility="collapsed",
+                                    )
+
                                 with after_col:
                                     st.markdown("**Current content**")
-                                    st.text_area("Current content", value=after_text, height=240, disabled=True,
-                                                 key=f"after_{name}", label_visibility="collapsed")
+                                    st.text_area(
+                                        "Current content",
+                                        value=after_text,
+                                        height=240,
+                                        disabled=True,
+                                        key=f"after_{name}",
+                                        label_visibility="collapsed",
+                                    )
                     else:
-                        st.info("No modified files to compare. Modify a text file and scan again to test comparison.")
+                        st.info(
+                            "No modified files to compare. Modify a text file and scan again."
+                        )
 
-                    st.download_button("↓  Download CSV Report", data=df.to_csv(index=False).encode("utf-8"),
-                                       file_name="integrity_report.csv", mime="text/csv", use_container_width=True)
+                    st.download_button(
+                        "↓  Download CSV Report",
+                        data=df.to_csv(index=False).encode("utf-8"),
+                        file_name="integrity_report.csv",
+                        mime="text/csv",
+                        use_container_width=True,
+                    )
 
                     record_scan({
                         "timestamp": datetime.now().astimezone().isoformat(timespec="seconds"),
-                        "folder": str(root), "total": len(results), "unchanged": unchanged,
-                        "modified": modified, "new": new_files, "deleted": deleted,
+                        "folder": str(root),
+                        "total": len(results),
+                        "unchanged": unchanged,
+                        "modified": modified,
+                        "new": new_files,
+                        "deleted": deleted,
                     })
+
                     st.caption("Baseline created: " + baseline.get("created_at", "Unknown"))
+
         except (OSError, ValueError, json.JSONDecodeError) as error:
             st.error(f"Scan failed: {error}")
+
 
 # 9. Scan history
 elif page == "🕘  Scan History":
     st.markdown('<div class="section-label">AUDIT TRAIL</div>', unsafe_allow_html=True)
     st.subheader("Previous scans")
     st.write("Review scan summaries recorded by this application.")
+
     history = read_history()
+
     if history:
         history_df = pd.DataFrame(history)
+
         if "timestamp" in history_df.columns:
             history_df = history_df.sort_values("timestamp", ascending=False)
+
         if not history_df.empty:
             latest = history_df.iloc[0]
             c1, c2, c3 = st.columns(3)
             c1.metric("Recorded scans", len(history_df))
             c2.metric("Latest scan total", int(latest.get("total", 0)))
             c3.metric("Latest modified", int(latest.get("modified", 0)))
+
         st.dataframe(history_df, use_container_width=True, hide_index=True)
-        st.download_button("↓  Download Scan History", data=history_df.to_csv(index=False).encode("utf-8"),
-                           file_name="scan_history.csv", mime="text/csv")
+
+        st.download_button(
+            "↓  Download Scan History",
+            data=history_df.to_csv(index=False).encode("utf-8"),
+            file_name="scan_history.csv",
+            mime="text/csv",
+        )
     else:
         st.info("No scans recorded yet. Run an integrity scan to build your audit history.")
+
 
 # 10. Security
 else:
     st.markdown('<div class="section-label">TRUST & VERIFICATION</div>', unsafe_allow_html=True)
     st.subheader("Baseline security")
     st.write("Security mechanisms used by the File Integrity Checker.")
+
     sec1, sec2 = st.columns(2)
+
     with sec1:
         st.markdown("""
-        <div class="panel"><div class="panel-title">🔐 HMAC-SHA256 signature</div>
-        <div class="panel-copy">The baseline is signed with a separate local key. The signature is checked before scan results are trusted.</div></div>
+        <div class="panel">
+        <div class="panel-title">🔐 HMAC-SHA256 signature</div>
+        <div class="panel-copy">The baseline is signed with a separate local key. The signature is checked before scan results are trusted.</div>
+        </div>
         """, unsafe_allow_html=True)
+
     with sec2:
         st.markdown("""
-        <div class="panel"><div class="panel-title">🔎 SHA-256 fingerprints</div>
-        <div class="panel-copy">Each regular file is hashed in chunks and compared with the saved baseline to detect content changes.</div></div>
+        <div class="panel">
+        <div class="panel-title">🔎 SHA-256 fingerprints</div>
+        <div class="panel-copy">Each regular file is hashed in chunks and compared with the saved baseline to detect content changes.</div>
+        </div>
         """, unsafe_allow_html=True)
 
     st.markdown("### Verification status")
+
     try:
         verified_baseline = load_baseline()
+
         if verified_baseline is None:
             st.warning("No baseline exists yet. Create a trusted baseline from the Integrity Scanner.")
         else:
-            st.success(f"Baseline signature verified successfully. {len(verified_baseline['files'])} file(s) are listed in the baseline.")
+            st.success(
+                f"Baseline signature verified successfully. "
+                f"{len(verified_baseline['files'])} file(s) are listed in the baseline."
+            )
             st.caption("Baseline created: " + verified_baseline.get("created_at", "Unknown"))
+
     except (OSError, ValueError, json.JSONDecodeError) as error:
         st.error(f"Baseline verification failed: {error}")
 
@@ -475,8 +718,15 @@ else:
     - If the signing key is lost or replaced, create a new trusted baseline.
     - Treat a scan with file-read errors as incomplete; resolve errors before relying on results.
     """)
-    st.warning("Do not publish `.baseline_key`, and do not commit it to GitHub.")
+
+    st.warning(
+        "Do not publish .baseline_key. Never commit your signing key to GitHub."
+    )
+
 
 # 11. Footer
 st.markdown("---")
-st.markdown('<div class="footer">FILE INTEGRITY CHECKER • EDUCATIONAL CYBERSECURITY PROJECT • SHA-256 + HMAC-SHA256</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="footer">FILE INTEGRITY CHECKER • EDUCATIONAL CYBERSECURITY PROJECT • SHA-256 + HMAC-SHA256</div>',
+    unsafe_allow_html=True,
+)
