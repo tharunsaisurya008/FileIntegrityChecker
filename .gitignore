@@ -1,0 +1,7 @@
+.baseline_key
+baseline.json
+scan_history.jsonl
+__pycache__/
+.venv/
+venv/
+*.pyc
