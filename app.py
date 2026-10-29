@@ -86,6 +86,29 @@ h1,h2,h3 { letter-spacing: -.35px; }
 hr { border-color:#1b3859; }
 .footer { color:#7894b7; font-size:11px; text-align:center; padding-top:12px; }
 @media(max-width:768px) { .block-container { padding:1rem .8rem 2rem; } .hero { padding:21px; } }
+/* UI Enhancement: Smooth interactions and polished panels */
+.stButton > button {
+    border-radius: 12px;
+    font-weight: 700;
+    transition: all 0.2s ease-in-out;
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(22, 163, 255, 0.25);
+}
+
+[data-testid="stMetric"] {
+    background: linear-gradient(135deg, rgba(22, 99, 180, 0.16), rgba(80, 60, 180, 0.12));
+    border: 1px solid rgba(80, 160, 255, 0.25);
+    border-radius: 14px;
+    padding: 14px;
+}
+
+[data-testid="stExpander"] {
+    border: 1px solid rgba(80, 160, 255, 0.25);
+    border-radius: 12px;
+}
 </style>
 """, unsafe_allow_html=True)
 
